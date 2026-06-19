@@ -48,7 +48,13 @@ The skill's value is:
    - Run framework dev servers with reload/watch flags enabled.
 10. Validate the scaffold through Docker Compose before final cleanup, including the browser-visible hello-world page success state.
 11. During cleanup, ask whether to remove the health endpoint and hello-world landing page. If the user says yes, remove them and any tests/docs/validation checks that only exist for those scaffold smoke surfaces.
-12. After validation and cleanup pass, remove bootstrap-only files, reinitialize git, create an initial commit, and offer GitHub upstream creation with `gh` when requested.
+12. After validation and the smoke-surface cleanup pass, present all potentially destructive handoff steps to the user together as a single approval, rather than asking about each one separately. List the steps and exactly what each will remove or change:
+    - Remove bootstrap-only files (list what will be deleted).
+    - Remove validation-only artifacts that real development will not use, such as host virtual environments, dependency directories, caches, or packages/scripts/tools installed just to run validation.
+    - Reinitialize git, including deleting any existing `.git` history.
+    - Create the initial commit.
+
+    Ask the user to approve the whole set, and tell them they can approve only a subset by naming which steps to skip. Perform only the approved steps and skip the rest. Then offer GitHub upstream creation with `gh` only when requested, confirming again at the point of repo creation.
 
 ## Questions To Ask
 
@@ -165,6 +171,10 @@ Before final git handoff, ask the user whether to keep or remove the scaffold sm
 - If the user keeps it, leave the health endpoint, hello-world landing page, related tests, and validation checks in place.
 - If the user removes it, delete the endpoint and landing page, remove tests that only cover those scaffold surfaces, update validation so it no longer expects them, and leave any reusable database connectivity utilities that the real application still needs.
 - If removing the landing page would leave the frontend without a routable page, replace it with the selected framework's minimal app shell rather than leaving a broken route.
+- Ask whether to remove validation-only artifacts that will not be used for actual future development, such as host-side virtual environments, dependency directories, caches, and any packages, tools, or scripts that were installed on the host purely to run validation. Distinguish these from artifacts the running stack genuinely needs:
+  - Remove things that only existed to validate the scaffold, for example a host `.venv` or `node_modules` created outside Docker, browser binaries or test runners installed just for the smoke check, and throwaway helper scripts.
+  - Keep dependency manifests, lockfiles, Dockerfiles, `compose.yaml`, and the in-container dependency setup that real development depends on.
+  - When unsure whether an artifact is validation-only or needed for development, ask rather than deleting it.
 - Update `docs/decisions/bootstrap.md` with the cleanup decision and files removed.
 
 ## Git And GitHub
