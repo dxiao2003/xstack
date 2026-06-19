@@ -48,12 +48,13 @@ The skill's value is:
    - Run framework dev servers with reload/watch flags enabled.
 10. Validate the scaffold through Docker Compose before final cleanup, including the browser-visible hello-world page success state.
 11. During cleanup, ask whether to remove the health endpoint and hello-world landing page. If the user says yes, remove them and any tests/docs/validation checks that only exist for those scaffold smoke surfaces.
-12. After validation and the smoke-surface cleanup pass, confirm each potentially destructive handoff step with the user before performing it:
-    - Ask before removing bootstrap-only files, listing what will be deleted.
-    - Ask before removing validation-only artifacts that real development will not use, such as host virtual environments, dependency directories, caches, or packages/scripts/tools installed just to run validation.
-    - Ask before reinitializing git, including before deleting any existing `.git` history.
-    - Ask before creating the initial commit.
-    - Offer GitHub upstream creation with `gh` only when requested, and confirm again at the point of repo creation.
+12. After validation and the smoke-surface cleanup pass, present all potentially destructive handoff steps to the user together as a single approval, rather than asking about each one separately. List the steps and exactly what each will remove or change:
+    - Remove bootstrap-only files (list what will be deleted).
+    - Remove validation-only artifacts that real development will not use, such as host virtual environments, dependency directories, caches, or packages/scripts/tools installed just to run validation.
+    - Reinitialize git, including deleting any existing `.git` history.
+    - Create the initial commit.
+
+    Ask the user to approve the whole set, and tell them they can approve only a subset by naming which steps to skip. Perform only the approved steps and skip the rest. Then offer GitHub upstream creation with `gh` only when requested, confirming again at the point of repo creation.
 
 ## Questions To Ask
 
