@@ -1,6 +1,6 @@
 ---
 name: bootstrap-webapp-project
-description: Dynamically bootstrap a new full-stack web app project by checking current official framework documentation, choosing the best supported scaffold commands or starter templates, creating a Docker-first local development environment, configuring bind mounts and hot reload, adding a database-backed backend health check and frontend hello-world smoke page, validating the generated project, cleaning up bootstrap-only files, reinitializing git, and optionally creating a GitHub upstream with gh.
+description: Use when starting a new full-stack web app from scratch. Scaffolds frontend and backend from current framework docs into a Docker-first local dev environment with hot reload, a database-backed health check, and a validated hello-world baseline, then reinitializes git and optionally creates a GitHub repo.
 ---
 
 # Bootstrap Webapp Project
