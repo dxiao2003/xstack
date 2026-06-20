@@ -1,8 +1,8 @@
 # Project Guidance
 
-Guidance for working with this project with Claude Code. Keep this file short and
-specific — put here only what cannot be inferred from the code, and grow it as the
-project teaches you what matters. Run `/init` to add codebase-specific detail.
+Guidance for coding agents working in this project (Claude Code reads it via the
+`CLAUDE.md` symlink). Keep this file short and specific — put here only what cannot
+be inferred from the code, and grow it as the project teaches you what matters.
 
 ## Working Agreement
 

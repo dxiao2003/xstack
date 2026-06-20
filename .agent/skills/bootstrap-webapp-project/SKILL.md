@@ -49,7 +49,7 @@ The skill's value is:
 10. Validate the scaffold through Docker Compose before final cleanup, including the browser-visible hello-world page success state.
 11. During cleanup, ask whether to remove the health endpoint and hello-world landing page. If the user says yes, remove them and any tests/docs/validation checks that only exist for those scaffold smoke surfaces.
 12. After validation and the smoke-surface cleanup pass, present all potentially destructive handoff steps to the user together as a single approval, rather than asking about each one separately. List the steps and exactly what each will remove or change:
-    - Copy the project guidance template from `assets/CLAUDE.md.template` to `CLAUDE.md` in the root directory of the generated project. Do this right before removing the bootstrap code and reinitializing git, so the template ships with the new project.
+    - Copy the project guidance template from `assets/AGENTS.md` to `AGENTS.md` in the root directory of the generated project, then create a `CLAUDE.md` symlink pointing to it (`ln -s AGENTS.md CLAUDE.md`). Do this right before removing the bootstrap code and reinitializing git, so the template ships with the new project.
     - Remove bootstrap-only files (list what will be deleted).
     - Remove validation-only artifacts that real development will not use, such as host virtual environments, dependency directories, caches, or packages/scripts/tools installed just to run validation.
     - Reinitialize git, including deleting any existing `.git` history.
@@ -182,7 +182,7 @@ Before final git handoff, ask the user whether to keep or remove the scaffold sm
 
 The default handoff is:
 
-1. Copy `assets/CLAUDE.md.template` to `CLAUDE.md` in the root of the generated project. Do this right before removing the bootstrap code and reinitializing git so the project guidance ships with the new project.
+1. Copy `assets/AGENTS.md` to `AGENTS.md` in the root of the generated project, then symlink `CLAUDE.md` to it (`ln -s AGENTS.md CLAUDE.md`) so both Claude Code and other agents pick up the same guidance. Do this right before removing the bootstrap code and reinitializing git so the project guidance ships with the new project.
 2. Remove bootstrap-only files that should not live in the product repo. Do not remove skills that may be used beyond the bootstrap phase.
 3. Remove any template `.git` history only after explicit confirmation.
 4. Run `git init`.
