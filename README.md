@@ -14,7 +14,7 @@ Use the bootstrap webapp project skill to initialize this repo as a new Docker-f
 
 ## `build-webapp-feature`
 
-Builds a new feature into an existing web app from a natural-language prompt, running non-interactively end to end. The skill vets the request against the current code, derives concrete testable acceptance criteria, writes unit/integration/e2e tests, implements the feature, and iterates until the tests pass — logging risks, warnings, ambiguities, and a final summary to a git-ignored `WORKLOG.md` for the user to review afterward.
+Builds a new feature into an existing web app from a natural-language prompt, running non-interactively end to end. The skill works on a new feature branch: it vets the request against the current code, derives concrete testable acceptance criteria, writes unit/integration/e2e tests, implements the feature, and iterates until the tests pass — logging risks, warnings, ambiguities, and a final summary to a git-ignored `WORKLOG.md`. By default it finishes by committing the work and opening a pull request for the user to review.
 
 Use it by asking your agent:
 

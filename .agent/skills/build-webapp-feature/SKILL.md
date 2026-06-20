@@ -1,6 +1,6 @@
 ---
 name: build-webapp-feature
-description: Use when asked to build a new feature into an existing web app from a natural-language description. Runs non-interactively end to end — vets the request against the current codebase, derives concrete testable acceptance criteria, writes unit/integration/e2e tests, implements the feature, and iterates until tests pass. Logs risks, warnings, ambiguities, and a final summary to a git-ignored WORKLOG.md for the user to review afterward.
+description: Use when asked to build a new feature into an existing web app from a natural-language description. Runs non-interactively end to end on a new feature branch — vets the request against the current codebase, derives concrete testable acceptance criteria, writes unit/integration/e2e tests, implements the feature, and iterates until tests pass. Logs risks, warnings, ambiguities, and a final summary to a git-ignored WORKLOG.md, then commits and opens a pull request by default.
 ---
 
 # Build Webapp Feature
@@ -52,6 +52,7 @@ Execute these steps in order. Write the results of each step to `WORKLOG.md` bef
 ### 1. Orient
 
 - Confirm the working directory is an existing web app repository. Identify the frameworks, languages, package managers, test runners, and how the app is built and run. Look for project skills, scripts, or docs that describe how to test and run the app.
+- **Create a feature branch.** Do not work directly on the default branch. Create and check out a new descriptively named branch for this feature (e.g. `feature/<short-slug>`) before making any changes. If the working tree already has uncommitted changes, log a `WARNING:` and branch from the current state anyway.
 - Start the `WORKLOG.md` section for this feature with the original request verbatim and a short note on the stack you detected.
 - Ensure `WORKLOG.md` is git-ignored per the conventions above.
 
@@ -96,16 +97,23 @@ Implement the feature following the existing code's structure, patterns, and con
 - If a test reveals that an acceptance criterion or assumption was wrong, adjust the implementation and log the correction. Only change a test if it was itself incorrect, and log that change with justification.
 - Record progress in `WORKLOG.md` under an **Implementation** subsection: what was built, files touched, test runs, and the final test result. Log any test that remains failing with a `RISK:`/`WARNING:` and the reason.
 
-### 6. Summarize And Terminate
+### 6. Summarize, Commit, And Open A PR
 
-Write a final **Summary** subsection to `WORKLOG.md` and stop. The summary must let the user review the run without re-reading everything:
+Write a final **Summary** subsection to `WORKLOG.md`. The summary must let the user review the run without re-reading everything:
 
 - What was built, and the final state of the acceptance criteria (which are met, which are not).
 - Final test results (counts, pass/fail, anything skipped).
 - A consolidated list of all `RISK:`, `WARNING:`, `ASSUMPTION:`, and `AMBIGUITY:` items raised during the run, so the user has one place to review what needs their attention.
 - Files added/changed and any follow-up work recommended.
 
-Do not commit changes, push, or open a PR unless the user's prompt explicitly asked for it. Leave the working tree and `WORKLOG.md` for the user to review.
+Then, by default, ship the work for review:
+
+- **Commit** the feature changes on the feature branch created in step 1. Never stage or commit `WORKLOG.md` (it is git-ignored). Use a clear commit message describing the feature.
+- **Push** the branch to the remote.
+- **Open a pull request** against the default branch. Make the PR body a concise version of the `WORKLOG.md` summary — what was built, acceptance-criteria status, test results, and the consolidated list of flagged risks/warnings/assumptions/ambiguities — so a reviewer sees the caveats without reading the log.
+- Report the PR URL to the user.
+
+This is the default behavior so the run ends with reviewable work, consistent with the non-interactive operating mode. The user's prompt may override it with an explicit exception (e.g. "don't open a PR" or "just commit locally"); honor such instructions. If committing or pushing fails (e.g. no remote or missing credentials), log a `WARNING:`, leave the commit on the local branch, and report what the user needs to do to finish pushing.
 
 ## Notes
 
