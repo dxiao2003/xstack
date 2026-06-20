@@ -1,0 +1,35 @@
+# Project Guidance
+
+Guidance for coding agents working in this project (Claude Code reads it via the
+`CLAUDE.md` symlink). Keep this file short and specific — put here only what cannot
+be inferred from the code, and grow it as the project teaches you what matters.
+
+## Working Agreement
+
+These rails apply to every change, regardless of the stack.
+
+1. **Think before coding.** State your interpretation of the request before writing
+   code. If it has more than one reasonable reading, surface the options and ask
+   rather than guessing — a wrong assumption is more expensive than a question.
+
+2. **Keep it simple.** Build only what was asked. No speculative features, no
+   abstractions for single-use code, no "configurable" hooks nobody requested. The
+   simplest implementation that satisfies the request is the correct one.
+
+3. **Make surgical changes.** Touch only the code the request needs. Don't refactor
+   what isn't broken, reformat untouched lines, or "improve" adjacent code — it
+   hides the real change and widens the blast radius of review.
+
+4. **Verify against criteria.** Restate the task as concrete, checkable success
+   criteria before you start, then run the relevant checks (tests, lint, the app
+   itself) and confirm each one is met before reporting the work done.
+
+## Commands
+
+This project runs on Docker Compose. See `compose.yaml` for services and
+`docs/decisions/bootstrap.md` for the scaffold decisions, stack versions, and the
+exact build / test / lint / migration commands. Prefer `scripts/validate_scaffold.sh`
+to confirm the stack is healthy end to end.
+
+<!-- Add project-specific conventions, anti-patterns, and gotchas below as you learn
+     them. A rule with a stated reason generalizes; a rule without one gets ignored. -->
