@@ -28,12 +28,38 @@ This file is guidance, not a template source. Check current official documentati
 
 Generate Compose files for the exact selected stack. For the recommended stack, the expected shape is:
 
-- `frontend`: build from `frontend/`, mount `./frontend:/app`, keep `/app/node_modules` in a named volume, run the documented dev server with host binding, and expose the Vite port.
-- `backend`: build from `backend/`, mount `./backend:/app`, keep Python package caches or virtualenvs in named volumes when the chosen tool supports it, run Uvicorn with reload, and expose the API port.
-- `db`: use the official Postgres image, set local-only credentials through environment variables or an env file, attach a named data volume, and add a health check.
+- `frontend`: build from `frontend/`, mount `./frontend:/app`, keep `/app/node_modules` in a named volume, run the documented dev server with configured host/port binding, and expose the configured Vite port.
+- `backend`: build from `backend/`, mount `./backend:/app`, keep Python package caches or virtualenvs in named volumes when the chosen tool supports it, run Uvicorn with reload and configured host/port binding, and expose the configured API port.
+- `db`: use the official Postgres image, set local-only credentials through environment variables or an env file, attach a named data volume, publish the configured host database port, and add a health check.
 - When a migration tool is selected, Compose startup should run pending database migrations before the backend serves requests. For the recommended SQLAlchemy + Alembic stack, use a clearly documented Alembic migration command in an entrypoint, startup script, or one-shot migration service that the backend depends on.
 
 Bind mounts should map directly to the repo directories the user edits. Named volumes should cover paths that are produced inside containers and should not be overwritten by the host mount, especially `node_modules`, package stores, virtualenvs, caches, and database data.
+
+## Local Configuration Overrides
+
+Generated projects should include a committed defaults/example file and a git-ignored developer override file. For the recommended stack, use this starting set unless the selected frameworks make different names clearly preferable:
+
+```dotenv
+FRONTEND_DEV_HOST=0.0.0.0
+FRONTEND_DEV_PORT=5173
+BACKEND_DEV_HOST=0.0.0.0
+BACKEND_DEV_PORT=8000
+DATABASE_HOST_PORT=5432
+FRONTEND_ALLOWED_HOSTS=localhost,127.0.0.1
+BACKEND_ALLOWED_HOSTS=localhost,127.0.0.1
+```
+
+The scaffold should apply committed defaults first and ignored local overrides second for Docker Compose, validation scripts, and any generated local dev wrappers. Prefer a single committed helper such as `scripts/load_env.sh` when multiple scripts need the same behavior.
+
+Use the same variables consistently:
+
+- Compose port mappings: `${FRONTEND_DEV_PORT}:<container frontend port>`, `${BACKEND_DEV_PORT}:<container backend port>`, and `${DATABASE_HOST_PORT}:5432` for Postgres.
+- Frontend server command/config: `FRONTEND_DEV_HOST`, `FRONTEND_DEV_PORT`, and `FRONTEND_ALLOWED_HOSTS`.
+- Backend server command/config: `BACKEND_DEV_HOST`, `BACKEND_DEV_PORT`, and `BACKEND_ALLOWED_HOSTS`.
+- Frontend API proxy or base URL: derive it from the configured backend port rather than hard-coding `8000`; use a reachable browser hostname such as the current page hostname or `localhost` when the backend bind host is `0.0.0.0`.
+- Validation waits and browser checks: derive frontend and backend URLs from the same variables.
+
+For Vite, read `FRONTEND_ALLOWED_HOSTS` into the dev server allowed-host setting when the generated Vite version supports it. For FastAPI, parse `BACKEND_ALLOWED_HOSTS` into the selected CORS or trusted-host middleware configuration when those middleware are generated. Parse comma-separated host lists by trimming whitespace and dropping empty values.
 
 ## Smoke Test Surface
 
@@ -43,11 +69,12 @@ For the recommended Vite + React stack, make the initial landing page fetch that
 
 ## Reload And Watch Checklist
 
-- Bind dev servers to `0.0.0.0` inside containers.
-- Publish stable host ports.
+- Bind dev servers to configured host values that default to `0.0.0.0` inside containers.
+- Publish stable host ports that can be overridden from the ignored local config file.
 - Enable the documented reload/watch mode for each framework.
 - Add polling watch options when the selected framework needs them under Docker Desktop, WSL, or remote filesystems.
 - Verify reload by editing a mounted source file and confirming the service reflects the change without rebuilding the image.
+- Verify at least one non-default local port override and confirm the frontend still reaches the backend.
 
 ## Pre-Commit Hooks
 
@@ -155,6 +182,7 @@ pnpm exec husky init
 - `docker compose up -d` starts all services.
 - The database-backed backend health endpoint returns success.
 - The frontend landing page loads in a browser-capable validation step and displays a successful backend/database health result.
+- A validation run with non-default local frontend, backend, or database host ports still starts and the frontend calls the configured backend URL.
 - Frontend lint/test/build commands run inside the frontend container.
 - Backend lint/test commands run inside the backend container.
 - Database migrations run during `docker compose up` from a clean database when a migration tool is selected.
