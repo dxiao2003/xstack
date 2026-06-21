@@ -31,6 +31,7 @@ Generate Compose files for the exact selected stack. For the recommended stack, 
 - `frontend`: build from `frontend/`, mount `./frontend:/app`, keep `/app/node_modules` in a named volume, run the documented dev server with host binding, and expose the Vite port.
 - `backend`: build from `backend/`, mount `./backend:/app`, keep Python package caches or virtualenvs in named volumes when the chosen tool supports it, run Uvicorn with reload, and expose the API port.
 - `db`: use the official Postgres image, set local-only credentials through environment variables or an env file, attach a named data volume, and add a health check.
+- When a migration tool is selected, Compose startup should run pending database migrations before the backend serves requests. For the recommended SQLAlchemy + Alembic stack, use a clearly documented Alembic migration command in an entrypoint, startup script, or one-shot migration service that the backend depends on.
 
 Bind mounts should map directly to the repo directories the user edits. Named volumes should cover paths that are produced inside containers and should not be overwritten by the host mount, especially `node_modules`, package stores, virtualenvs, caches, and database data.
 
@@ -156,6 +157,6 @@ pnpm exec husky init
 - The frontend landing page loads in a browser-capable validation step and displays a successful backend/database health result.
 - Frontend lint/test/build commands run inside the frontend container.
 - Backend lint/test commands run inside the backend container.
-- Database migrations can run from a clean database when a migration tool is selected.
+- Database migrations run during `docker compose up` from a clean database when a migration tool is selected.
 - Pre-commit hooks pass cleanly against all scaffold files (`pre-commit run --all-files` exits 0).
 - `docker compose down -v` cleans up local state after validation.

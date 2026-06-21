@@ -39,6 +39,7 @@ The skill's value is:
    - service-specific `Dockerfile`s or documented dev container commands
    - `.dockerignore` files
    - project-specific environment examples
+   - a migration step, entrypoint, or one-shot service so database migrations run when the Docker Compose stack starts
    - `scripts/validate_scaffold.sh`
 9. Configure bind mounts so host edits update the running containers without rebuilding:
    - Mount the frontend source directory into the frontend service workdir.
@@ -123,6 +124,7 @@ Make Docker Compose the default local environment. Generate service configuratio
   - Other frameworks: use the official watch/reload mode from the documentation.
 - Use non-root users or ownership repair only where needed to avoid host-owned artifact problems.
 - Put secrets in environment files or local-only examples, not committed real values.
+- When a database migration tool is selected, make `docker compose up` run pending migrations before the backend begins serving traffic, using the generated migration command for the selected stack. Prefer an explicit migration service, entrypoint, or startup script that fails the stack visibly when migrations fail.
 
 For stack-specific Docker details, read `references/supported-stacks.md`.
 
@@ -195,13 +197,14 @@ Generate `scripts/validate_scaffold.sh` for the selected stack instead of copyin
 1. `docker compose down -v`
 2. `docker compose build`
 3. `docker compose up -d`
-4. Wait for the database-backed backend health endpoint to return success.
-5. Wait for the frontend dev server.
-6. Load the frontend hello-world landing page with a browser-capable check, such as Playwright when available, and assert that it displays a successful backend/database health result. A raw `curl` of the frontend HTML is not enough for this check because it does not prove the browser executed the health request.
-7. Run backend tests, lint, type checks, migrations, or health checks as applicable.
-8. Run frontend lint, tests, and production build as applicable.
-9. Run pre-commit hooks against all files (`pre-commit run --all-files` or equivalent) and assert they pass cleanly.
-10. `docker compose down -v` during cleanup unless the user wants the stack left running.
+4. Confirm the Compose startup path has run database migrations when a migration tool is selected.
+5. Wait for the database-backed backend health endpoint to return success.
+6. Wait for the frontend dev server.
+7. Load the frontend hello-world landing page with a browser-capable check, such as Playwright when available, and assert that it displays a successful backend/database health result. A raw `curl` of the frontend HTML is not enough for this check because it does not prove the browser executed the health request.
+8. Run backend tests, lint, type checks, migrations, or health checks as applicable.
+9. Run frontend lint, tests, and production build as applicable.
+10. Run pre-commit hooks against all files (`pre-commit run --all-files` or equivalent) and assert they pass cleanly.
+11. `docker compose down -v` during cleanup unless the user wants the stack left running.
 
 If Docker is unavailable, report that clearly and ask whether to install/use Docker or adapt to a non-Docker validation flow. Do not silently treat bare-metal validation as equivalent to the Docker-first target.
 
