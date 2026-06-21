@@ -24,6 +24,13 @@ These rails apply to every change, regardless of the stack.
    criteria before you start, then run the relevant checks (tests, lint, the app
    itself) and confirm each one is met before reporting the work done.
 
+5. **Title PRs as Conventional Commits.** Every pull request title must follow the
+   [Conventional Commits](https://www.conventionalcommits.org/) pattern
+   `<type>[optional scope]: <description>` (e.g. `feat: add user login`,
+   `fix(api): handle empty payload`). Use a recognized type such as `feat`, `fix`,
+   `docs`, `refactor`, `test`, `chore`, `build`, `ci`, or `perf`, and append `!`
+   after the type/scope for a breaking change.
+
 ## Commands
 
 This project runs on Docker Compose. See `compose.yaml` for services and
