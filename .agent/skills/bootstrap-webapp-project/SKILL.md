@@ -39,6 +39,7 @@ The skill's value is:
    - service-specific `Dockerfile`s or documented dev container commands
    - `.dockerignore` files
    - project-specific environment examples
+   - committed default/example configuration and git-ignored local override configuration
    - a migration step, entrypoint, or one-shot service so database migrations run when the Docker Compose stack starts
    - `scripts/validate_scaffold.sh`
 9. Configure bind mounts so host edits update the running containers without rebuilding:
@@ -53,9 +54,15 @@ The skill's value is:
     - Install the hook runner and required hook tools on the host so hooks fire at commit time. Document the install commands in `README.md` under a "Developer Setup" section.
     - Run hooks against all current files (`pre-commit run --all-files` or equivalent) to confirm the scaffold passes cleanly before Docker validation.
     - Record hook configuration files and install commands in `docs/decisions/bootstrap.md`.
-11. Validate the scaffold through Docker Compose before final cleanup, including the browser-visible hello-world page success state.
-12. During cleanup, ask whether to remove the health endpoint and hello-world landing page. If the user says yes, remove them and any tests/docs/validation checks that only exist for those scaffold smoke surfaces.
-13. After validation and the smoke-surface cleanup pass, present all potentially destructive handoff steps to the user together as a single approval, rather than asking about each one separately. List the steps and exactly what each will remove or change:
+11. Add a local configuration override system before validation:
+    - Commit a documented defaults/example file, such as `.env.example`, that lists every supported local development override with safe defaults.
+    - Add the real developer override file, such as `.env.local`, to `.gitignore`. Do not commit developer-specific override values.
+    - Generate a small, documented loading path used by `docker compose`, validation, and local dev scripts. The loader must apply committed defaults first and then override them from the ignored local file when it exists.
+    - Use one shared set of variable names for values consumed by more than one service, so frontend and backend stay in sync when a developer changes an override.
+    - Document how to create or edit the local override file in `README.md` under "Developer Setup".
+12. Validate the scaffold through Docker Compose before final cleanup, including the browser-visible hello-world page success state.
+13. During cleanup, ask whether to remove the health endpoint and hello-world landing page. If the user says yes, remove them and any tests/docs/validation checks that only exist for those scaffold smoke surfaces.
+14. After validation and the smoke-surface cleanup pass, present all potentially destructive handoff steps to the user together as a single approval, rather than asking about each one separately. List the steps and exactly what each will remove or change:
     - Copy the project guidance template from `assets/AGENTS.md` to `AGENTS.md` in the root directory of the generated project, then create a `CLAUDE.md` symlink pointing to it (`ln -s AGENTS.md CLAUDE.md`). Do this right before removing the bootstrap code and reinitializing git, so the template ships with the new project.
     - Remove bootstrap-only files (list what will be deleted).
     - Remove validation-only artifacts that real development will not use, such as host virtual environments, dependency directories, caches, or packages/scripts/tools installed just to run validation.
@@ -85,7 +92,7 @@ Before creating files, browse the official documentation for each selected frame
 
 - Official scaffold command or starter template recommendation.
 - Current package manager guidance.
-- Development server host binding and reload/watch settings.
+- Development server host binding, allowed-host configuration, port configuration, and reload/watch settings.
 - Docker/container guidance when provided by the framework.
 - Test, lint, format, build, and migration commands.
 - Version constraints and compatibility notes for selected integrations.
@@ -111,16 +118,53 @@ Create a temporary end-to-end proof that the generated stack is wired correctly:
 
 Record these files in `docs/decisions/bootstrap.md` so cleanup can remove them accurately if the user chooses.
 
+## Local Configuration Overrides
+
+Every generated project must provide a systematic way for each developer to override local-only configuration without editing tracked files.
+
+Generate these files or their closest equivalents for the selected stack:
+
+- A committed defaults/example file, such as `.env.example`, containing safe local defaults and comments for every supported override.
+- A git-ignored local override file, such as `.env.local`, that developers may create on their machines.
+- A committed loader script or documented wrapper command used by development and validation scripts. It must load the defaults/example file first and the ignored local file second when present.
+- `.gitignore` entries for the ignored local override file and any framework-specific local env files that should not be committed.
+
+For the default React + Vite + FastAPI + Postgres stack, start with these override keys, renaming only when the selected frameworks have strong naming conventions:
+
+```dotenv
+FRONTEND_DEV_HOST=0.0.0.0
+FRONTEND_DEV_PORT=5173
+BACKEND_DEV_HOST=0.0.0.0
+BACKEND_DEV_PORT=8000
+DATABASE_HOST_PORT=5432
+FRONTEND_ALLOWED_HOSTS=localhost,127.0.0.1
+BACKEND_ALLOWED_HOSTS=localhost,127.0.0.1
+```
+
+Use the same backend host/port variables everywhere they are needed, while distinguishing bind hosts from browser-facing hosts:
+
+- Backend server binding and Docker Compose published ports.
+- Frontend development server proxy or browser-facing API base URL. Browser-facing URLs should use the configured backend port with a reachable hostname such as the current page hostname or `localhost` when the backend bind host is `0.0.0.0`.
+- Frontend tests and browser smoke checks.
+- Validation scripts that wait for the backend health endpoint.
+
+Use the frontend host/port variables everywhere the frontend server is started, exposed, waited on, or opened in browser validation. Use `DATABASE_HOST_PORT` for the host-side database port and keep the container-side database port at the image default unless the selected database requires otherwise.
+
+Allowed-host overrides must be consumed by the relevant framework security settings, not merely documented. For example, Vite's dev server allowed-host setting and FastAPI/CORS or trusted-host middleware should read from the generated configuration path when those protections are present in the selected stack. Prefer parsing comma-separated values into explicit lists and trimming empty entries.
+
+Document the supported overrides in the generated `README.md`, including a short example that copies `.env.example` to `.env.local` and changes ports or allowed hosts for local testing.
+
 ## Docker Development Contract
 
 Make Docker Compose the default local environment. Generate service configuration that is reproducible and pleasant for iterative development:
 
 - Bind service source into containers with paths matching the generated repo layout, for example `./frontend:/app` and `./backend:/app`.
 - Keep generated dependency/cache directories in named volumes, for example `/app/node_modules`, pnpm store, uv cache, Python virtualenv, and Postgres data.
-- Bind dev servers to `0.0.0.0` inside containers and publish stable host ports.
+- Bind dev servers to configured host values that default to `0.0.0.0` inside containers and publish stable, configurable host ports.
+- Route all Docker Compose port mappings, service commands, frontend API URLs/proxies, and validation wait URLs through the generated configuration override system instead of duplicating literal host or port values.
 - Enable automatic reload:
-  - Vite: run the documented dev command with `--host 0.0.0.0`; set polling watch options when needed.
-  - FastAPI/Uvicorn: run with `--reload --host 0.0.0.0`.
+  - Vite: run the documented dev command with the configured host and port; set polling watch options when needed.
+  - FastAPI/Uvicorn: run with `--reload` plus the configured host and port.
   - Other frameworks: use the official watch/reload mode from the documentation.
 - Use non-root users or ownership repair only where needed to avoid host-owned artifact problems.
 - Put secrets in environment files or local-only examples, not committed real values.
@@ -185,6 +229,7 @@ Create `docs/decisions/bootstrap.md` in the generated project. Include:
 - Official documentation links consulted, with retrieval date.
 - Scaffold commands run.
 - Docker Compose service layout, bind mounts, named volumes, ports, and reload/watch settings.
+- Local configuration override files, ignored developer-specific files, supported override keys, and which generated services consume each key.
 - Pre-commit hook runner chosen, hooks configured, hook versions pinned, and install commands.
 - Validation commands and results.
 
@@ -203,8 +248,9 @@ Generate `scripts/validate_scaffold.sh` for the selected stack instead of copyin
 7. Load the frontend hello-world landing page with a browser-capable check, such as Playwright when available, and assert that it displays a successful backend/database health result. A raw `curl` of the frontend HTML is not enough for this check because it does not prove the browser executed the health request.
 8. Run backend tests, lint, type checks, migrations, or health checks as applicable.
 9. Run frontend lint, tests, and production build as applicable.
-10. Run pre-commit hooks against all files (`pre-commit run --all-files` or equivalent) and assert they pass cleanly.
-11. `docker compose down -v` during cleanup unless the user wants the stack left running.
+10. Exercise the local override path by running at least one validation command with non-default frontend, backend, or database host ports and confirming the frontend still calls the correct backend URL.
+11. Run pre-commit hooks against all files (`pre-commit run --all-files` or equivalent) and assert they pass cleanly.
+12. `docker compose down -v` during cleanup unless the user wants the stack left running.
 
 If Docker is unavailable, report that clearly and ask whether to install/use Docker or adapt to a non-Docker validation flow. Do not silently treat bare-metal validation as equivalent to the Docker-first target.
 
@@ -219,6 +265,7 @@ After validation passes and before cleanup/git handoff, verify that selected fra
 - Database URLs, migration tools, and drivers match the selected database.
 - The backend health endpoint uses the same database connection configuration as application code and executes a real query.
 - The frontend hello-world page calls the backend through the same URL/proxy path users will use locally.
+- Frontend and backend host, port, allowed-host, and database host-port values come from the generated override system, and shared values are not duplicated under conflicting names.
 - Reload/watch configuration works with bind-mounted source.
 - Pre-commit hooks are installed and pass cleanly against the scaffold (`pre-commit run --all-files` or equivalent exits 0).
 - Hook configuration files reference the correct linter/formatter versions for the selected stack.
