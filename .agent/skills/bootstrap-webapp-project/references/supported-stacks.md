@@ -48,7 +48,73 @@ For the recommended Vite + React stack, make the initial landing page fetch that
 - Add polling watch options when the selected framework needs them under Docker Desktop, WSL, or remote filesystems.
 - Verify reload by editing a mounted source file and confirming the service reflects the change without rebuilding the image.
 
-## Validation Checklist
+## Pre-Commit Hooks
+
+### Hook runner
+
+For the recommended stack (Python backend + Node.js frontend), use `pre-commit`. It handles multi-language repos and is the standard in the Python ecosystem. For Node.js-only stacks, use `husky` + `lint-staged`.
+
+Check current versions from official sources (pre-commit.com, PyPI, npm) before pinning — do not use remembered version numbers.
+
+### Recommended `.pre-commit-config.yaml` shape for the default stack
+
+```yaml
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: <current-release>
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-json
+      - id: check-merge-conflict
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: <current-release>
+    hooks:
+      - id: ruff          # lint
+        args: [--fix]
+      - id: ruff-format   # format
+
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: <current-release>
+    hooks:
+      - id: mypy
+        additional_dependencies: [<project runtime deps>]
+
+  # TypeScript / frontend — run as local hooks via pnpm
+  - repo: local
+    hooks:
+      - id: eslint
+        name: eslint
+        language: system
+        entry: pnpm --prefix frontend exec eslint --max-warnings 0
+        types: [file]
+        files: ^frontend/.*\.[tj]sx?$
+      - id: prettier
+        name: prettier
+        language: system
+        entry: pnpm --prefix frontend exec prettier --check
+        types: [file]
+        files: ^frontend/.*\.[tj]sx?$
+      - id: tsc
+        name: tsc
+        language: system
+        entry: pnpm --prefix frontend exec tsc --noEmit
+        pass_filenames: false
+        files: ^frontend/
+```
+
+Adjust paths (`frontend/`, `backend/`) and dependency lists to match the generated project layout.
+
+### Installation commands (document in README.md under "Developer Setup")
+
+```bash
+pip install pre-commit   # or: pipx install pre-commit
+pre-commit install
+```
+
+### Validation Checklist
 
 - Docker can build every service from a clean checkout.
 - `docker compose up -d` starts all services.
@@ -57,4 +123,5 @@ For the recommended Vite + React stack, make the initial landing page fetch that
 - Frontend lint/test/build commands run inside the frontend container.
 - Backend lint/test commands run inside the backend container.
 - Database migrations can run from a clean database when a migration tool is selected.
+- Pre-commit hooks pass cleanly against all scaffold files (`pre-commit run --all-files` exits 0).
 - `docker compose down -v` cleans up local state after validation.

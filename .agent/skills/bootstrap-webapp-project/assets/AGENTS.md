@@ -31,6 +31,23 @@ These rails apply to every change, regardless of the stack.
    `docs`, `refactor`, `test`, `chore`, `build`, `ci`, or `perf`, and append `!`
    after the type/scope for a breaking change.
 
+## Developer Setup
+
+After cloning, install pre-commit hooks so linters run automatically at commit time:
+
+```bash
+# Install the hook runner (once per machine)
+pip install pre-commit   # or: pipx install pre-commit
+
+# Install hooks into this repo
+pre-commit install
+```
+
+<!-- If the project uses husky instead of pre-commit, replace the block above with:
+pnpm install
+pnpm exec husky init
+-->
+
 ## Commands
 
 This project runs on Docker Compose. See `compose.yaml` for services and

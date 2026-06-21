@@ -46,9 +46,15 @@ The skill's value is:
    - Use named volumes for dependency directories that should not be shadowed by host mounts, such as `node_modules`, package manager stores, virtual environments, Python caches, and database data.
    - Set file-watching environment variables or polling modes when needed for Docker Desktop, WSL, or network filesystems.
    - Run framework dev servers with reload/watch flags enabled.
-10. Validate the scaffold through Docker Compose before final cleanup, including the browser-visible hello-world page success state.
-11. During cleanup, ask whether to remove the health endpoint and hello-world landing page. If the user says yes, remove them and any tests/docs/validation checks that only exist for those scaffold smoke surfaces.
-12. After validation and the smoke-surface cleanup pass, present all potentially destructive handoff steps to the user together as a single approval, rather than asking about each one separately. List the steps and exactly what each will remove or change:
+10. Configure pre-commit hooks for the selected stack:
+    - Choose a hook runner compatible with the selected languages. Default to `pre-commit` when Python is in the stack (it handles multi-language repos). Default to `husky` + `lint-staged` when the stack is Node.js-only.
+    - Install and configure hooks that cover the lint, format, and type-check commands documented for the selected frameworks. See the "Pre-Commit Hooks" section for per-stack defaults.
+    - Install the hook runner and required hook tools on the host so hooks fire at commit time. Document the install commands in `README.md` under a "Developer Setup" section.
+    - Run hooks against all current files (`pre-commit run --all-files` or equivalent) to confirm the scaffold passes cleanly before Docker validation.
+    - Record hook configuration files and install commands in `docs/decisions/bootstrap.md`.
+11. Validate the scaffold through Docker Compose before final cleanup, including the browser-visible hello-world page success state.
+12. During cleanup, ask whether to remove the health endpoint and hello-world landing page. If the user says yes, remove them and any tests/docs/validation checks that only exist for those scaffold smoke surfaces.
+13. After validation and the smoke-surface cleanup pass, present all potentially destructive handoff steps to the user together as a single approval, rather than asking about each one separately. List the steps and exactly what each will remove or change:
     - Copy the project guidance template from `assets/AGENTS.md` to `AGENTS.md` in the root directory of the generated project, then create a `CLAUDE.md` symlink pointing to it (`ln -s AGENTS.md CLAUDE.md`). Do this right before removing the bootstrap code and reinitializing git, so the template ships with the new project.
     - Remove bootstrap-only files (list what will be deleted).
     - Remove validation-only artifacts that real development will not use, such as host virtual environments, dependency directories, caches, or packages/scripts/tools installed just to run validation.
@@ -120,6 +126,53 @@ Make Docker Compose the default local environment. Generate service configuratio
 
 For stack-specific Docker details, read `references/supported-stacks.md`.
 
+## Pre-Commit Hooks
+
+Add pre-commit hooks so every commit on the new project is gated by the same linters and checks CI would run.
+
+### Hook Runner Selection
+
+- Use `pre-commit` (https://pre-commit.com) when the stack includes Python. It handles multi-language repos and is the standard choice in the Python ecosystem.
+- Use `husky` + `lint-staged` when the stack is Node.js-only. Configure `lint-staged` to scope checks to staged files only for speed.
+- When both Python and Node.js are present, prefer `pre-commit`; it can invoke `npm`/`pnpm` scripts as local hooks.
+
+Before pinning hook versions, check the current release from official sources (PyPI for `pre-commit` hooks, npm for JS tools) rather than using remembered version numbers.
+
+### Per-Stack Hooks
+
+**Python backend (FastAPI default):**
+- `ruff` — lint and auto-format (replaces flake8 + black + isort in a single tool)
+- `mypy` — type check with the project's `mypy.ini` or `pyproject.toml` config
+- `trailing-whitespace`, `end-of-file-fixer`, `check-yaml`, `check-json` — `pre-commit-hooks` built-ins
+
+**TypeScript/JavaScript frontend (React + Vite default):**
+- `eslint` — lint staged files via `pnpm exec eslint --max-warnings 0`
+- `prettier` — format check via `pnpm exec prettier --check`
+- TypeScript type check — run `tsc --noEmit` as a local hook (all files, not just staged, because type errors can be cross-file)
+
+**Always include regardless of stack:**
+- Trailing whitespace and end-of-file newline enforcement
+- YAML and JSON syntax validation
+- Merge-conflict marker detection
+
+### Installation
+
+Install the hook runner on the host so hooks fire at every `git commit`:
+
+- For `pre-commit`: `pip install pre-commit` (or `pipx install pre-commit`), then `pre-commit install` in the repo root.
+- For `husky`: `pnpm add -D husky lint-staged`, then `pnpm exec husky init`.
+
+Document these commands in `README.md` under a "Developer Setup" section. Also add a note to the generated `AGENTS.md` / `CLAUDE.md` project guidance so coding agents know to run setup after cloning.
+
+### Validation
+
+After installing hooks, run them against all files in the scaffold to confirm they pass cleanly:
+
+- `pre-commit`: `pre-commit run --all-files`
+- `husky` + `lint-staged`: stage all files with `git add -A` and run `git stash` → hook dry-run → `git stash pop`, or run each lint command directly.
+
+Fix any issues surfaced before proceeding to Docker validation. Do not commit a scaffold that fails its own hooks.
+
 ## Decision Log
 
 Create `docs/decisions/bootstrap.md` in the generated project. Include:
@@ -129,6 +182,7 @@ Create `docs/decisions/bootstrap.md` in the generated project. Include:
 - Official documentation links consulted, with retrieval date.
 - Scaffold commands run.
 - Docker Compose service layout, bind mounts, named volumes, ports, and reload/watch settings.
+- Pre-commit hook runner chosen, hooks configured, hook versions pinned, and install commands.
 - Validation commands and results.
 
 Keep this decision log in the final project.
@@ -145,7 +199,8 @@ Generate `scripts/validate_scaffold.sh` for the selected stack instead of copyin
 6. Load the frontend hello-world landing page with a browser-capable check, such as Playwright when available, and assert that it displays a successful backend/database health result. A raw `curl` of the frontend HTML is not enough for this check because it does not prove the browser executed the health request.
 7. Run backend tests, lint, type checks, migrations, or health checks as applicable.
 8. Run frontend lint, tests, and production build as applicable.
-9. `docker compose down -v` during cleanup unless the user wants the stack left running.
+9. Run pre-commit hooks against all files (`pre-commit run --all-files` or equivalent) and assert they pass cleanly.
+10. `docker compose down -v` during cleanup unless the user wants the stack left running.
 
 If Docker is unavailable, report that clearly and ask whether to install/use Docker or adapt to a non-Docker validation flow. Do not silently treat bare-metal validation as equivalent to the Docker-first target.
 
@@ -161,6 +216,8 @@ After validation passes and before cleanup/git handoff, verify that selected fra
 - The backend health endpoint uses the same database connection configuration as application code and executes a real query.
 - The frontend hello-world page calls the backend through the same URL/proxy path users will use locally.
 - Reload/watch configuration works with bind-mounted source.
+- Pre-commit hooks are installed and pass cleanly against the scaffold (`pre-commit run --all-files` or equivalent exits 0).
+- Hook configuration files reference the correct linter/formatter versions for the selected stack.
 - Validation exercises the selected framework integrations.
 
 Fix generated project files and rerun validation when incompatibilities exist.
