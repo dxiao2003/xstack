@@ -1,0 +1,4 @@
+interface:
+  display_name: "Build Webapp Feature"
+  short_description: "Build a web app feature from a prompt, non-interactively, with tests."
+  default_prompt: "Use $build-webapp-feature to build the following feature into this web app, logging risks and a summary to WORKLOG.md: "
