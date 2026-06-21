@@ -233,7 +233,7 @@ Before final git handoff, ask the user whether to keep or remove the scaffold sm
 - Ask whether to remove validation-only artifacts that will not be used for actual future development, such as host-side virtual environments, dependency directories, caches, and any packages, tools, or scripts that were installed on the host purely to run validation. Distinguish these from artifacts the running stack genuinely needs:
   - Remove things that only existed to validate the scaffold, for example a host `.venv` or `node_modules` created outside Docker, browser binaries or test runners installed just for the smoke check, and throwaway helper scripts.
   - Keep dependency manifests, lockfiles, Dockerfiles, `compose.yaml`, and the in-container dependency setup that real development depends on.
-  - **Never remove pre-commit hook configuration** (`.pre-commit-config.yaml`, `husky` config, `lint-staged` config, or related entries in `package.json` / `pyproject.toml`). These are permanent project infrastructure, not scaffold-only artifacts.
+  - **Never remove pre-commit hook configuration.** Hook runner config files and any lint, format, or type-check tool configuration added to project manifests are permanent project infrastructure, not scaffold-only artifacts.
   - When unsure whether an artifact is validation-only or needed for development, ask rather than deleting it.
 - Update `docs/decisions/bootstrap.md` with the cleanup decision and files removed.
 
