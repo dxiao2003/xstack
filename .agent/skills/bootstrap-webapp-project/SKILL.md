@@ -132,28 +132,28 @@ Add pre-commit hooks so every commit on the new project is gated by the same lin
 
 ### Hook Runner Selection
 
-- Use `pre-commit` (https://pre-commit.com) when the stack includes Python. It handles multi-language repos and is the standard choice in the Python ecosystem.
-- Use `husky` + `lint-staged` when the stack is Node.js-only. Configure `lint-staged` to scope checks to staged files only for speed.
-- When both Python and Node.js are present, prefer `pre-commit`; it can invoke `npm`/`pnpm` scripts as local hooks.
+Choose a hook runner suited to the primary runtime(s) in the selected stack:
 
-Before pinning hook versions, check the current release from official sources (PyPI for `pre-commit` hooks, npm for JS tools) rather than using remembered version numbers.
+- **Multi-language or Python-containing stacks**: use `pre-commit` (https://pre-commit.com). It is runtime-agnostic and handles mixed repos with a single config file.
+- **Node.js-only stacks**: use `husky` + `lint-staged`. Configure `lint-staged` to scope checks to staged files for speed.
+- **Other single-runtime stacks**: prefer the hook runner standard for that ecosystem, or use `pre-commit` as a safe default when none is established.
 
-### Per-Stack Hooks
+### What Hooks To Configure
 
-**Python backend (FastAPI default):**
-- `ruff` — lint and auto-format (replaces flake8 + black + isort in a single tool)
-- `mypy` — type check with the project's `mypy.ini` or `pyproject.toml` config
-- `trailing-whitespace`, `end-of-file-fixer`, `check-yaml`, `check-json` — `pre-commit-hooks` built-ins
+For each language and framework in the selected stack, identify and configure hooks for:
 
-**TypeScript/JavaScript frontend (React + Vite default):**
-- `eslint` — lint staged files via `pnpm exec eslint --max-warnings 0`
-- `prettier` — format check via `pnpm exec prettier --check`
-- TypeScript type check — run `tsc --noEmit` as a local hook (all files, not just staged, because type errors can be cross-file)
+1. **Linting** — static analysis and bug detection appropriate for the language (e.g., `eslint`, `ruff`, `golangci-lint`, `rubocop`).
+2. **Formatting** — enforce a consistent style, either auto-applying or checking (e.g., `prettier`, `ruff format`, `gofmt`, `rustfmt`).
+3. **Type checking** — when the selected language has a static type system (e.g., `tsc --noEmit` for TypeScript, `mypy` for Python; the compiler itself for Go, Rust, or Java).
 
-**Always include regardless of stack:**
+Check the official documentation and community standards for each selected language before pinning tool versions. Do not use remembered version numbers — fetch current releases from the tool's PyPI page, npm registry, or release notes.
+
+**Always include regardless of language:**
 - Trailing whitespace and end-of-file newline enforcement
 - YAML and JSON syntax validation
 - Merge-conflict marker detection
+
+See `references/supported-stacks.md` for common language-to-tool mappings and a configuration example.
 
 ### Installation
 
@@ -161,6 +161,7 @@ Install the hook runner on the host so hooks fire at every `git commit`:
 
 - For `pre-commit`: `pip install pre-commit` (or `pipx install pre-commit`), then `pre-commit install` in the repo root.
 - For `husky`: `pnpm add -D husky lint-staged`, then `pnpm exec husky init`.
+- For other runners: follow the official installation guide for the selected runner.
 
 Document these commands in `README.md` under a "Developer Setup" section. Also add a note to the generated `AGENTS.md` / `CLAUDE.md` project guidance so coding agents know to run setup after cloning.
 
@@ -169,7 +170,7 @@ Document these commands in `README.md` under a "Developer Setup" section. Also a
 After installing hooks, run them against all files in the scaffold to confirm they pass cleanly:
 
 - `pre-commit`: `pre-commit run --all-files`
-- `husky` + `lint-staged`: stage all files with `git add -A` and run `git stash` → hook dry-run → `git stash pop`, or run each lint command directly.
+- `husky` + `lint-staged`: run each lint and format command directly against all relevant files.
 
 Fix any issues surfaced before proceeding to Docker validation. Do not commit a scaffold that fails its own hooks.
 

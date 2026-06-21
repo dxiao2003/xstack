@@ -50,13 +50,36 @@ For the recommended Vite + React stack, make the initial landing page fetch that
 
 ## Pre-Commit Hooks
 
-### Hook runner
+### Hook Runner
 
-For the recommended stack (Python backend + Node.js frontend), use `pre-commit`. It handles multi-language repos and is the standard in the Python ecosystem. For Node.js-only stacks, use `husky` + `lint-staged`.
+- **Python-containing or multi-language stacks**: `pre-commit` — runtime-agnostic, handles mixed repos with a single config file.
+- **Node.js-only stacks**: `husky` + `lint-staged` — configure `lint-staged` to check only staged files for speed.
+- **Other single-runtime stacks**: use the hook runner standard for that ecosystem, or `pre-commit` as a safe default.
 
-Check current versions from official sources (pre-commit.com, PyPI, npm) before pinning — do not use remembered version numbers.
+Always fetch current versions from official sources (pre-commit.com, PyPI, npm, tool release pages) — do not pin from memory.
 
-### Recommended `.pre-commit-config.yaml` shape for the default stack
+### Common Language → Tool Mappings
+
+For each language in the selected stack, configure hooks for the canonical lint, format, and type-check tools:
+
+| Language | Lint | Format | Type Check |
+|---|---|---|---|
+| Python | `ruff` | `ruff format` | `mypy` |
+| TypeScript / JavaScript | `eslint` | `prettier` | `tsc --noEmit` |
+| Go | `golangci-lint` | `gofmt` / `goimports` | (compiler) |
+| Rust | `clippy` | `rustfmt` | (compiler) |
+| Java | `checkstyle` / `pmd` | `google-java-format` | (compiler) |
+| Ruby | `rubocop` | `rubocop --autocorrect` | — |
+| Shell | `shellcheck` | `shfmt` | — |
+
+For languages not listed, check the pre-commit hooks directory (https://pre-commit.com/hooks.html) and the language's official tooling documentation.
+
+**Always add regardless of language:**
+- `pre-commit-hooks`: `trailing-whitespace`, `end-of-file-fixer`, `check-yaml`, `check-json`, `check-merge-conflict`
+
+### Example Configuration (Default Stack: Python Backend + TypeScript Frontend)
+
+Generate a config shaped like this for the default stack, substituting tools from the mapping table above for other language selections:
 
 ```yaml
 repos:
@@ -72,9 +95,9 @@ repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: <current-release>
     hooks:
-      - id: ruff          # lint
+      - id: ruff
         args: [--fix]
-      - id: ruff-format   # format
+      - id: ruff-format
 
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: <current-release>
@@ -82,7 +105,7 @@ repos:
       - id: mypy
         additional_dependencies: [<project runtime deps>]
 
-  # TypeScript / frontend — run as local hooks via pnpm
+  # TypeScript / frontend — run as local hooks via the selected package manager
   - repo: local
     hooks:
       - id: eslint
@@ -105,16 +128,27 @@ repos:
         files: ^frontend/
 ```
 
-Adjust paths (`frontend/`, `backend/`) and dependency lists to match the generated project layout.
+Adjust tool selections, repo URLs, paths, and dependency lists to match the actual selected stack.
 
-### Installation commands (document in README.md under "Developer Setup")
+### Installation Commands
+
+Document in `README.md` under a "Developer Setup" section and in `AGENTS.md` / `CLAUDE.md`.
+
+**pre-commit (Python-containing or multi-language stacks):**
 
 ```bash
 pip install pre-commit   # or: pipx install pre-commit
 pre-commit install
 ```
 
-### Validation Checklist
+**husky + lint-staged (Node.js-only stacks):**
+
+```bash
+pnpm add -D husky lint-staged
+pnpm exec husky init
+```
+
+## Validation Checklist
 
 - Docker can build every service from a clean checkout.
 - `docker compose up -d` starts all services.
