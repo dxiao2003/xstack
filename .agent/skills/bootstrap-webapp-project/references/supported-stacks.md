@@ -48,6 +48,106 @@ For the recommended Vite + React stack, make the initial landing page fetch that
 - Add polling watch options when the selected framework needs them under Docker Desktop, WSL, or remote filesystems.
 - Verify reload by editing a mounted source file and confirming the service reflects the change without rebuilding the image.
 
+## Pre-Commit Hooks
+
+### Hook Runner
+
+- **Python-containing or multi-language stacks**: `pre-commit` — runtime-agnostic, handles mixed repos with a single config file.
+- **Node.js-only stacks**: `husky` + `lint-staged` — configure `lint-staged` to check only staged files for speed.
+- **Other single-runtime stacks**: use the hook runner standard for that ecosystem, or `pre-commit` as a safe default.
+
+Always fetch current versions from official sources (pre-commit.com, PyPI, npm, tool release pages) — do not pin from memory.
+
+### Common Language → Tool Mappings
+
+For each language in the selected stack, configure hooks for the canonical lint, format, and type-check tools:
+
+| Language | Lint | Format | Type Check |
+|---|---|---|---|
+| Python | `ruff` | `ruff format` | `mypy` |
+| TypeScript / JavaScript | `eslint` | `prettier` | `tsc --noEmit` |
+| Go | `golangci-lint` | `gofmt` / `goimports` | (compiler) |
+| Rust | `clippy` | `rustfmt` | (compiler) |
+| Java | `checkstyle` / `pmd` | `google-java-format` | (compiler) |
+| Ruby | `rubocop` | `rubocop --autocorrect` | — |
+| Shell | `shellcheck` | `shfmt` | — |
+
+For languages not listed, check the pre-commit hooks directory (https://pre-commit.com/hooks.html) and the language's official tooling documentation.
+
+**Always add regardless of language:**
+- `pre-commit-hooks`: `trailing-whitespace`, `end-of-file-fixer`, `check-yaml`, `check-json`, `check-merge-conflict`
+
+### Example Configuration (Default Stack: Python Backend + TypeScript Frontend)
+
+Generate a config shaped like this for the default stack, substituting tools from the mapping table above for other language selections:
+
+```yaml
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: <current-release>
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-json
+      - id: check-merge-conflict
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: <current-release>
+    hooks:
+      - id: ruff
+        args: [--fix]
+      - id: ruff-format
+
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: <current-release>
+    hooks:
+      - id: mypy
+        additional_dependencies: [<project runtime deps>]
+
+  # TypeScript / frontend — run as local hooks via the selected package manager
+  - repo: local
+    hooks:
+      - id: eslint
+        name: eslint
+        language: system
+        entry: pnpm --prefix frontend exec eslint --max-warnings 0
+        types: [file]
+        files: ^frontend/.*\.[tj]sx?$
+      - id: prettier
+        name: prettier
+        language: system
+        entry: pnpm --prefix frontend exec prettier --check
+        types: [file]
+        files: ^frontend/.*\.[tj]sx?$
+      - id: tsc
+        name: tsc
+        language: system
+        entry: pnpm --prefix frontend exec tsc --noEmit
+        pass_filenames: false
+        files: ^frontend/
+```
+
+Adjust tool selections, repo URLs, paths, and dependency lists to match the actual selected stack.
+
+### Installation Commands
+
+Document in `README.md` under a "Developer Setup" section and in `AGENTS.md` / `CLAUDE.md`.
+
+**pre-commit (Python-containing or multi-language stacks):**
+
+```bash
+pip install pre-commit   # or: pipx install pre-commit
+pre-commit install
+```
+
+**husky + lint-staged (Node.js-only stacks):**
+
+```bash
+pnpm add -D husky lint-staged
+pnpm exec husky init
+```
+
 ## Validation Checklist
 
 - Docker can build every service from a clean checkout.
@@ -57,4 +157,5 @@ For the recommended Vite + React stack, make the initial landing page fetch that
 - Frontend lint/test/build commands run inside the frontend container.
 - Backend lint/test commands run inside the backend container.
 - Database migrations can run from a clean database when a migration tool is selected.
+- Pre-commit hooks pass cleanly against all scaffold files (`pre-commit run --all-files` exits 0).
 - `docker compose down -v` cleans up local state after validation.

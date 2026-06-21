@@ -46,9 +46,15 @@ The skill's value is:
    - Use named volumes for dependency directories that should not be shadowed by host mounts, such as `node_modules`, package manager stores, virtual environments, Python caches, and database data.
    - Set file-watching environment variables or polling modes when needed for Docker Desktop, WSL, or network filesystems.
    - Run framework dev servers with reload/watch flags enabled.
-10. Validate the scaffold through Docker Compose before final cleanup, including the browser-visible hello-world page success state.
-11. During cleanup, ask whether to remove the health endpoint and hello-world landing page. If the user says yes, remove them and any tests/docs/validation checks that only exist for those scaffold smoke surfaces.
-12. After validation and the smoke-surface cleanup pass, present all potentially destructive handoff steps to the user together as a single approval, rather than asking about each one separately. List the steps and exactly what each will remove or change:
+10. Configure pre-commit hooks for the selected stack:
+    - Choose a hook runner compatible with the selected languages. Default to `pre-commit` when Python is in the stack (it handles multi-language repos). Default to `husky` + `lint-staged` when the stack is Node.js-only.
+    - Install and configure hooks that cover the lint, format, and type-check commands documented for the selected frameworks. See the "Pre-Commit Hooks" section for per-stack defaults.
+    - Install the hook runner and required hook tools on the host so hooks fire at commit time. Document the install commands in `README.md` under a "Developer Setup" section.
+    - Run hooks against all current files (`pre-commit run --all-files` or equivalent) to confirm the scaffold passes cleanly before Docker validation.
+    - Record hook configuration files and install commands in `docs/decisions/bootstrap.md`.
+11. Validate the scaffold through Docker Compose before final cleanup, including the browser-visible hello-world page success state.
+12. During cleanup, ask whether to remove the health endpoint and hello-world landing page. If the user says yes, remove them and any tests/docs/validation checks that only exist for those scaffold smoke surfaces.
+13. After validation and the smoke-surface cleanup pass, present all potentially destructive handoff steps to the user together as a single approval, rather than asking about each one separately. List the steps and exactly what each will remove or change:
     - Copy the project guidance template from `assets/AGENTS.md` to `AGENTS.md` in the root directory of the generated project, then create a `CLAUDE.md` symlink pointing to it (`ln -s AGENTS.md CLAUDE.md`). Do this right before removing the bootstrap code and reinitializing git, so the template ships with the new project.
     - Remove bootstrap-only files (list what will be deleted).
     - Remove validation-only artifacts that real development will not use, such as host virtual environments, dependency directories, caches, or packages/scripts/tools installed just to run validation.
@@ -120,6 +126,54 @@ Make Docker Compose the default local environment. Generate service configuratio
 
 For stack-specific Docker details, read `references/supported-stacks.md`.
 
+## Pre-Commit Hooks
+
+Add pre-commit hooks so every commit on the new project is gated by the same linters and checks CI would run.
+
+### Hook Runner Selection
+
+Choose a hook runner suited to the primary runtime(s) in the selected stack:
+
+- **Multi-language or Python-containing stacks**: use `pre-commit` (https://pre-commit.com). It is runtime-agnostic and handles mixed repos with a single config file.
+- **Node.js-only stacks**: use `husky` + `lint-staged`. Configure `lint-staged` to scope checks to staged files for speed.
+- **Other single-runtime stacks**: prefer the hook runner standard for that ecosystem, or use `pre-commit` as a safe default when none is established.
+
+### What Hooks To Configure
+
+For each language and framework in the selected stack, identify and configure hooks for:
+
+1. **Linting** — static analysis and bug detection appropriate for the language (e.g., `eslint`, `ruff`, `golangci-lint`, `rubocop`).
+2. **Formatting** — enforce a consistent style, either auto-applying or checking (e.g., `prettier`, `ruff format`, `gofmt`, `rustfmt`).
+3. **Type checking** — when the selected language has a static type system (e.g., `tsc --noEmit` for TypeScript, `mypy` for Python; the compiler itself for Go, Rust, or Java).
+
+Check the official documentation and community standards for each selected language before pinning tool versions. Do not use remembered version numbers — fetch current releases from the tool's PyPI page, npm registry, or release notes.
+
+**Always include regardless of language:**
+- Trailing whitespace and end-of-file newline enforcement
+- YAML and JSON syntax validation
+- Merge-conflict marker detection
+
+See `references/supported-stacks.md` for common language-to-tool mappings and a configuration example.
+
+### Installation
+
+Install the hook runner on the host so hooks fire at every `git commit`:
+
+- For `pre-commit`: `pip install pre-commit` (or `pipx install pre-commit`), then `pre-commit install` in the repo root.
+- For `husky`: `pnpm add -D husky lint-staged`, then `pnpm exec husky init`.
+- For other runners: follow the official installation guide for the selected runner.
+
+Document these commands in `README.md` under a "Developer Setup" section. Also add a note to the generated `AGENTS.md` / `CLAUDE.md` project guidance so coding agents know to run setup after cloning.
+
+### Validation
+
+After installing hooks, run them against all files in the scaffold to confirm they pass cleanly:
+
+- `pre-commit`: `pre-commit run --all-files`
+- `husky` + `lint-staged`: run each lint and format command directly against all relevant files.
+
+Fix any issues surfaced before proceeding to Docker validation. Do not commit a scaffold that fails its own hooks.
+
 ## Decision Log
 
 Create `docs/decisions/bootstrap.md` in the generated project. Include:
@@ -129,6 +183,7 @@ Create `docs/decisions/bootstrap.md` in the generated project. Include:
 - Official documentation links consulted, with retrieval date.
 - Scaffold commands run.
 - Docker Compose service layout, bind mounts, named volumes, ports, and reload/watch settings.
+- Pre-commit hook runner chosen, hooks configured, hook versions pinned, and install commands.
 - Validation commands and results.
 
 Keep this decision log in the final project.
@@ -145,7 +200,8 @@ Generate `scripts/validate_scaffold.sh` for the selected stack instead of copyin
 6. Load the frontend hello-world landing page with a browser-capable check, such as Playwright when available, and assert that it displays a successful backend/database health result. A raw `curl` of the frontend HTML is not enough for this check because it does not prove the browser executed the health request.
 7. Run backend tests, lint, type checks, migrations, or health checks as applicable.
 8. Run frontend lint, tests, and production build as applicable.
-9. `docker compose down -v` during cleanup unless the user wants the stack left running.
+9. Run pre-commit hooks against all files (`pre-commit run --all-files` or equivalent) and assert they pass cleanly.
+10. `docker compose down -v` during cleanup unless the user wants the stack left running.
 
 If Docker is unavailable, report that clearly and ask whether to install/use Docker or adapt to a non-Docker validation flow. Do not silently treat bare-metal validation as equivalent to the Docker-first target.
 
@@ -161,6 +217,8 @@ After validation passes and before cleanup/git handoff, verify that selected fra
 - The backend health endpoint uses the same database connection configuration as application code and executes a real query.
 - The frontend hello-world page calls the backend through the same URL/proxy path users will use locally.
 - Reload/watch configuration works with bind-mounted source.
+- Pre-commit hooks are installed and pass cleanly against the scaffold (`pre-commit run --all-files` or equivalent exits 0).
+- Hook configuration files reference the correct linter/formatter versions for the selected stack.
 - Validation exercises the selected framework integrations.
 
 Fix generated project files and rerun validation when incompatibilities exist.
@@ -175,6 +233,7 @@ Before final git handoff, ask the user whether to keep or remove the scaffold sm
 - Ask whether to remove validation-only artifacts that will not be used for actual future development, such as host-side virtual environments, dependency directories, caches, and any packages, tools, or scripts that were installed on the host purely to run validation. Distinguish these from artifacts the running stack genuinely needs:
   - Remove things that only existed to validate the scaffold, for example a host `.venv` or `node_modules` created outside Docker, browser binaries or test runners installed just for the smoke check, and throwaway helper scripts.
   - Keep dependency manifests, lockfiles, Dockerfiles, `compose.yaml`, and the in-container dependency setup that real development depends on.
+  - **Never remove pre-commit hook configuration.** Hook runner config files and any lint, format, or type-check tool configuration added to project manifests are permanent project infrastructure, not scaffold-only artifacts.
   - When unsure whether an artifact is validation-only or needed for development, ask rather than deleting it.
 - Update `docs/decisions/bootstrap.md` with the cleanup decision and files removed.
 
