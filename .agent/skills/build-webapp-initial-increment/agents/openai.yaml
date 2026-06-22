@@ -1,0 +1,4 @@
+interface:
+  display_name: "Build Webapp Initial Increment"
+  short_description: "Build the first real product increment."
+  default_prompt: "Use $build-webapp-initial-increment to build the first product increment for this web app: "

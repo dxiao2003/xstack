@@ -1,6 +1,6 @@
 ---
 name: build-webapp-feature
-description: Use when asked to build a new feature into an existing web app from a natural-language description. Runs non-interactively end to end on a new feature branch — vets the request against the current codebase, derives concrete testable acceptance criteria, writes unit/integration/e2e tests, implements the feature, and iterates until tests pass. Logs risks, warnings, ambiguities, and a final summary to a git-ignored WORKLOG.md, then commits and opens a pull request by default.
+description: Use when adding a follow-on feature to a web app that already has working product functionality and established conventions (existing domain model, routes, tests to pattern-match against). For the very first product workflow in an empty-but-runnable app, use build-webapp-initial-increment instead. Runs non-interactively end to end on a new feature branch — vets the request against the current codebase, derives concrete testable acceptance criteria, writes unit/integration/e2e tests, implements the feature, and iterates until tests pass. Logs risks, warnings, ambiguities, and a final summary to a git-ignored WORKLOG.md, then commits and opens a pull request by default.
 ---
 
 # Build Webapp Feature
