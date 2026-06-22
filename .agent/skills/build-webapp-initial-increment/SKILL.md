@@ -1,6 +1,6 @@
 ---
 name: build-webapp-initial-increment
-description: Use when asked to build the first real product increment in a greenfield or near-empty web app that already has a runnable foundation. Turns a product prompt into one narrow vertical slice, establishes initial app architecture in ARCHITECTURE.md, derives testable acceptance criteria, writes focused tests, implements frontend/backend/persistence changes as applicable, validates the result, logs decisions and risks to WORKLOG.md, then commits and opens a pull request by default.
+description: Use when asked to turn a runnable greenfield or near-empty web app into its first usable product workflow, establishing the initial product architecture future features should follow.
 ---
 
 # Build Webapp Initial Increment
