@@ -1,6 +1,6 @@
 ---
 name: build-webapp-initial-increment
-description: Use when asked to turn a runnable greenfield or near-empty web app into its first usable product workflow, establishing the initial product architecture future features should follow.
+description: Use for the first product feature in an app that has a runnable foundation but no real product functionality yet (no established domain model, routes, or feature conventions). Builds one narrow end-to-end workflow and lays down the initial product architecture in ARCHITECTURE.md for later features to follow. Not for apps that already have working features — use build-webapp-feature for those.
 ---
 
 # Build Webapp Initial Increment
