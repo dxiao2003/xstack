@@ -2,14 +2,14 @@
 
 Guidance for coding agents working in this repository (Claude Code reads it via the
 `CLAUDE.md` symlink). This repo contains agent skills for building full-stack web
-apps — see `README.md` for the skill catalog and `.agent/skills/<skill-name>` for the
+apps — see `README.md` for the skill catalog and `.agents/skills/<skill-name>` for the
 canonical source of each skill.
 
 ## Working Agreement
 
 1. **Single source of truth.** Each skill is authored once under
-   `.agent/skills/<skill-name>`. The `.claude/skills/<skill-name>` entries are symlinks,
-   not copies — edit the files under `.agent/skills` and both agents pick up the change.
+   `.agents/skills/<skill-name>`. The `.claude/skills/<skill-name>` entries are symlinks,
+   not copies — edit the files under `.agents/skills` and both agents pick up the change.
 
 2. **Keep changes surgical.** Touch only what the request needs. Don't refactor what
    isn't broken or reformat untouched lines — it hides the real change and widens the
