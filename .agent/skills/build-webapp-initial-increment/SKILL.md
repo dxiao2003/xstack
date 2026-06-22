@@ -48,21 +48,16 @@ In other cases, choose the safest viable default, record it, and continue.
 
 ## ARCHITECTURE.md Conventions
 
-`ARCHITECTURE.md` is committed product documentation. Create it if missing; update it if present. Keep it concise and factual.
+`ARCHITECTURE.md` is committed product architecture guidance. Create it if missing; update it if present. Keep it high-level, flexible, concise, and factual so future features can fit without constant rewrites.
 
-Record only decisions introduced or materially shaped by this first increment:
+Record only decisions future agents must understand to extend the app safely:
 
-- Current stack and runtime boundaries.
-- First domain boundary and why it exists.
-- Frontend route, component, state, and data-loading conventions.
-- Backend module, service, endpoint, or server-action conventions.
-- Data model, persistence, migration, and validation choices.
-- API contract style and error-shape conventions.
-- Testing and validation strategy.
-- Security, authentication, authorization, and operational assumptions, if relevant.
-- Deferred decisions and tradeoffs that future work should revisit.
+- Major runtime boundaries and app layers.
+- Product domain boundaries and ownership.
+- Cross-cutting conventions for data flow, APIs, persistence, validation, and errors.
+- Testing, operational, security, and deferred-decision guidance that materially affects future work.
 
-Do not turn `ARCHITECTURE.md` into a narrative implementation log. Put transient execution details, failed attempts, and run-specific caveats in `WORKLOG.md`.
+Prefer principles, extension points, and stable constraints over narrow rules. Do not document file-by-file structure, one-off implementation details, transient execution details, failed attempts, or choices ordinary feature work should be free to change; put run-specific caveats in `WORKLOG.md`.
 
 ## Workflow
 
@@ -87,8 +82,8 @@ Execute these steps in order. Write the result of each step to `WORKLOG.md` befo
 ### 3. Define Lasting Architecture Decisions
 
 - Create or update `ARCHITECTURE.md` before or alongside implementation planning.
-- Record the initial conventions this increment will establish for the app.
-- Tie each architecture decision to the workflow being built. Avoid speculative sections that are not exercised by the first increment.
+- Record the high-level conventions this increment establishes for future product work.
+- Write decisions as adaptable guidance: concrete enough to orient later changes, but broad enough to accommodate ordinary new features without edits.
 - If an architecture choice is provisional, mark it as such and state what future signal should revisit it.
 
 ### 4. Derive Concrete Acceptance Criteria
