@@ -12,19 +12,26 @@ These rails apply to every change, regardless of the stack.
    code. If it has more than one reasonable reading, surface the options and ask
    rather than guessing — a wrong assumption is more expensive than a question.
 
-2. **Keep it simple.** Build only what was asked. No speculative features, no
+2. **Respect the architecture.** If `ARCHITECTURE.md` exists, every change must
+   conform to it. If the user's request is not possible without altering or
+   contradicting the documented architecture, stop before implementation, surface
+   the conflict clearly, and ask the user to explicitly approve the architecture
+   change. After any approved change that alters the architecture, update
+   `ARCHITECTURE.md` in the same change.
+
+3. **Keep it simple.** Build only what was asked. No speculative features, no
    abstractions for single-use code, no "configurable" hooks nobody requested. The
    simplest implementation that satisfies the request is the correct one.
 
-3. **Make surgical changes.** Touch only the code the request needs. Don't refactor
+4. **Make surgical changes.** Touch only the code the request needs. Don't refactor
    what isn't broken, reformat untouched lines, or "improve" adjacent code — it
    hides the real change and widens the blast radius of review.
 
-4. **Verify against criteria.** Restate the task as concrete, checkable success
+5. **Verify against criteria.** Restate the task as concrete, checkable success
    criteria before you start, then run the relevant checks (tests, lint, the app
    itself) and confirm each one is met before reporting the work done.
 
-5. **Title PRs as Conventional Commits.** Every pull request title must follow the
+6. **Title PRs as Conventional Commits.** Every pull request title must follow the
    [Conventional Commits](https://www.conventionalcommits.org/) pattern
    `<type>[optional scope]: <description>` (e.g. `feat: add user login`,
    `fix(api): handle empty payload`). Use a recognized type such as `feat`, `fix`,
