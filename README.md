@@ -36,7 +36,7 @@ Use the build webapp feature skill to add <feature description> to this app.
 
 Each skill is authored once and exposed to multiple agents:
 
-- **Codex / OpenAI**: reads the skill from `.agent/skills/<skill-name>` (with interface metadata in `agents/openai.yaml`).
-- **Claude / Claude Code**: discovers the skill from `.claude/skills/<skill-name>`, which is a symlink to the canonical `.agent/skills/<skill-name>` directory. The `SKILL.md` frontmatter (`name` + `description`) is the format Claude Code expects, so no separate copy is needed.
+- **Codex / OpenAI**: reads the skill from `.agents/skills/<skill-name>` (with interface metadata in `agents/openai.yaml`).
+- **Claude / Claude Code**: discovers the skill from `.claude/skills/<skill-name>`, which is a symlink to the canonical `.agents/skills/<skill-name>` directory. The `SKILL.md` frontmatter (`name` + `description`) is the format Claude Code expects, so no separate copy is needed.
 
-Because each `.claude/skills/<skill-name>` is a symlink rather than a copy, there is a single source of truth: edit the files under `.agent/skills/<skill-name>` and both agents pick up the change.
+Because each `.claude/skills/<skill-name>` is a symlink rather than a copy, there is a single source of truth: edit the files under `.agents/skills/<skill-name>` and both agents pick up the change.
