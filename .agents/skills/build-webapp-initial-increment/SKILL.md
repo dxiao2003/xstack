@@ -116,8 +116,9 @@ Use the repo's existing test frameworks and commands.
 
 - Add unit tests for new isolated logic when meaningful.
 - Add integration tests for the first domain/API/persistence boundary when the stack supports them.
-- Add a browser-level or end-to-end test for the primary user workflow if e2e infrastructure already exists.
-- Do not introduce a large new test stack just for this increment unless the repo has no practical validation path and the cost is justified.
+- Add browser-level or end-to-end tests for the primary user workflow.
+- If e2e infrastructure does not already exist, install and configure a lightweight, repo-appropriate e2e test framework and add the workflow tests through it.
+- Keep any new e2e setup minimal: include only the dependencies, config, scripts, and documentation needed to run the workflow tests.
 - Map every acceptance criterion to at least one test or validation check. Log any uncovered criterion and why.
 
 It is acceptable and expected for tests to fail before implementation.
